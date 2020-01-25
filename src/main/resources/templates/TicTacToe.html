@@ -1,0 +1,106 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:v-on="http://www.w3.org/1999/xhtml">
+<head>
+    <meta charset="UTF-8">
+    <title>TicTacToe</title>
+    <script src="https://cdn.jsdelivr.net/npm/vue/dist/vue.js"></script>
+    <style>
+        table {
+            border-collapse:collapse;
+        }
+        td {
+            background-color: black;
+            border: 3px solid white;
+            font-size:40px;
+            color:#ffffff;
+            border-radius: 10px 10px 10px 10px;
+        }
+    </style>
+</head>
+<body>
+<div id="app">
+
+    <table border="1" height="170" width="170">
+        <tr align="center" valign="center">
+            <td v-text="matrix[0][0]" height="50" width="50" v-on:click="turn(0,0)" ></td>
+            <td v-text="matrix[0][1]" height="50" width="50"  v-on:click="turn(0,1)"></td>
+            <td v-text="matrix[0][2]" height="50" width="50"  v-on:click="turn(0,2)"></td>
+        </tr>
+        <tr align="center" valign="center" >
+            <td v-text="matrix[1][0]" height="50" width="50" v-on:click="turn(1,0)" ></td>
+            <td v-text="matrix[1][1]" height="50" width="50"  v-on:click="turn(1,1)"></td>
+            <td v-text="matrix[1][2]" height="50" width="50"  v-on:click="turn(1,2)"></td>
+        </tr>
+        <tr align="center" valign="center" >
+            <td v-text="matrix[2][0]" height="50" width="50" v-on:click="turn(2,0)" ></td>
+            <td v-text="matrix[2][1]" height="50" width="50"  v-on:click="turn(2,1)"></td>
+            <td v-text="matrix[2][2]" height="50" width="50"  v-on:click="turn(2,2)"></td>
+        </tr>
+
+    </table>
+
+    <p><label v-text="Notification"></label></p>
+    <p><label v-text="Symb"></label></p>
+</div>
+<script>
+    var ws = new WebSocket(`ws://${window.location.host}/ws`);
+    var app = new Vue({
+        el: '#app',
+        data: {
+                matrix:
+                    [
+                        ['', '', ''],
+                        ['', '', ''],
+                        ['', '', '']
+                    ],
+
+                Notification: "",
+                Symb: "",
+            },
+        methods:{
+            turn: async function(row,col){
+                    var mes =
+                        {
+                            type: this.Symb,
+
+                            content: (row.toString()) + (col.toString())
+                        };
+
+                    ws.send(JSON.stringify(mes))
+
+            }
+
+        },
+        mounted: async function ()
+        {
+            ws.onmessage = async (r) =>
+            {
+                if (JSON.parse(r.data).type === "symb")
+                {
+                    this.Symb = JSON.parse(r.data).content;
+                    if(this.Symb === 'X'){
+                        this.Notification = "Вы играете за " + this.Symb +". Вы ходите первым.";
+                    }
+                    if(this.Symb === 'O'){
+                        this.Notification = "Вы играете за " + this.Symb;
+                    }
+
+                }
+                if (JSON.parse(r.data).type === "Notification")
+                {
+                    this.Notification =  JSON.parse(r.data).content;
+                }
+                if (JSON.parse(r.data).type === 'X' || JSON.parse(r.data).type === 'O')
+                {
+                    var coords = JSON.parse(r.data).content;
+                    var row = Number(coords[0]);
+                    var col = Number(coords[1]);
+                    this.matrix[row][col] = JSON.parse(r.data).type;
+                }
+            }
+        }
+    })
+</script>
+</body>
+
+</html>
